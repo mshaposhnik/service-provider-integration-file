@@ -6,8 +6,8 @@ import (
 	"regexp"
 )
 
-var gitHubRegexp = "p([a-z]+)ch"
-var gitLabRegexp = "p([a-z]+)ch"
+var gitHubRegexp = "^https://github.com/(?<repoUser>[^/]++)/(?<repoName>[^/]++).git" //example
+var gitLabRegexp = "^(?<host>%s)/(?<user>[^/]++)/(?<project>[^./]++).git"            //example
 
 var github Github
 
