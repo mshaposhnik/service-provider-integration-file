@@ -2,12 +2,14 @@ package main
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"io"
 	"regexp"
 )
 
-var gitHubRegexp = "^https://github.com/(?<repoUser>[^/]++)/(?<repoName>[^/]++).git" //example
-var gitLabRegexp = "^(?<host>%s)/(?<user>[^/]++)/(?<project>[^./]++).git"            //example
+var gitHubRegexp = regexp.MustCompile(`(?m)^https://github.com/.git`) //example
+var gitLabRegexp = regexp.MustCompile(``)                             //example
 
 var github Github
 
@@ -22,8 +24,8 @@ type Gitlab struct {
 }
 
 func init() {
-	github = Github{template: regexp.MustCompile(gitHubRegexp)}
-	gitlab = Gitlab{template: regexp.MustCompile(gitLabRegexp)}
+	github = Github{template: gitHubRegexp}
+	gitlab = Gitlab{template: gitLabRegexp}
 }
 
 func getFileContents(ctx context.Context, repoUrl, filepath, ref string, callback func(url string)) (io.ReadCloser, error) {
@@ -31,6 +33,7 @@ func getFileContents(ctx context.Context, repoUrl, filepath, ref string, callbac
 	if github.accept(repoUrl) {
 		return github.fetch(ctx, repoUrl, filepath, ref, callback)
 	}
+	return nil, errors.New(fmt.Sprintf("Unknown scm provider fpr %s", repoUrl))
 }
 
 func (gh Github) accept(repo string) bool {
@@ -39,6 +42,7 @@ func (gh Github) accept(repo string) bool {
 
 func (gh Github) fetch(ctx context.Context, repoUrl, filepath, ref string, callback func(url string)) (io.ReadCloser, error) {
 	//TODO implement me
+	return nil, errors.New("not implemented")
 }
 
 func (gl Gitlab) accept(repo string) bool {
@@ -47,4 +51,5 @@ func (gl Gitlab) accept(repo string) bool {
 
 func (gl Gitlab) fetch(ctx context.Context, repoUrl, filepath, ref string, callback func(url string)) (io.ReadCloser, error) {
 	//TODO implement me
+	return nil, errors.New("not implemented")
 }

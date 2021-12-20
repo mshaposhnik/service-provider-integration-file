@@ -14,7 +14,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
@@ -24,22 +23,31 @@ import (
 func main() {
 	start()
 }
+func OkHandler2(w http.ResponseWriter, _ *http.Request) {
+	w.WriteHeader(http.StatusOK)
+}
+
+func OkHandler(w http.ResponseWriter, r *http.Request) {
+	//repo := r.FormValue("repo")
+	//path := r.FormValue("path")
+	//getter.Get()
+	//contents, err := getFileContents(context.TODO(), repo, path, "", func(url string) {
+	//	http.Redirect(w, r, url, http.StatusFound)
+	//})
+	//
+	//if err != nil {
+	//	return
+	//}
+	//_, _ = io.Copy(w, contents)
+}
 
 func start() {
 	router := mux.NewRouter()
 
-	router.HandleFunc("/", OkHandler).Methods("GET")
+	router.HandleFunc("/", OkHandler2).Methods("GET")
 
 	err := http.ListenAndServe(fmt.Sprintf(":%d", 8000), router)
 	if err != nil {
 		zap.L().Error("failed to start the HTTP server", zap.Error(err))
 	}
-}
-
-func OkHandler(w http.ResponseWriter, r *http.Request) {
-	repo := r.FormValue("repo")
-	path := r.FormValue("path")
-	getFileContents(context.Background(), repo, path, "", func(url string) {
-		http.Redirect(w, r, url, http.StatusFound)
-	})
 }
