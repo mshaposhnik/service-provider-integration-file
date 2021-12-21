@@ -1,11 +1,21 @@
 package main
 
 import (
+	"fmt"
+	"github.com/imroc/req"
 	"regexp"
-	"strings"
 )
 
-var GithubURLRegexp = regexp.MustCompile(`(?Um)^(?:http)(?:s)?(?:\:\/\/)github.com/(?P<repoUser>[^/]+)/(?P<repoName>[^/]+)((/)|(?:/tree/(?P<branchName>[^/]+)(?:/(?P<subFolder>.*))?)|(/pull/(?P<pullRequestId>[^/]+)))?$`)
+type GithubFile struct {
+	Name        string `json:"name"`
+	Path        string `json:"path"`
+	Size        int32  `json:"size"`
+	Encoding    string `json:"encoding"`
+	DownloadUrl string `json:"download_url"`
+}
+
+var GithubAPITemplate = "https://api.github.com/repos/%s/%s/contents/%s"
+var GithubURLRegexp = regexp.MustCompile(`(?Um)^(?:https)(?:\:\/\/)github.com/(?P<repoUser>[^/]+)/(?P<repoName>[^/]+)(.git)?$`)
 var GithubURLRegexpNames = GithubURLRegexp.SubexpNames()
 
 // GitHubScmProvider implements Detector to detect GitHub URLs.
@@ -13,20 +23,24 @@ type GitHubScmProvider struct {
 }
 
 func (d *GitHubScmProvider) Detect(repoUrl, filepath, ref string) (bool, string, error) {
-	if len(repoUrl) == 0 {
+	if len(repoUrl) == 0 || !GithubURLRegexp.MatchString(repoUrl) {
 		return false, "", nil
 	}
 
-	GithubURLRegexp.FindStringSubmatch(repoUrl)
-	if GithubURLRegexp.MatchString(repoUrl) {
-		result := GithubURLRegexp.FindAllStringSubmatch(repoUrl, -1)
-		m := map[string]string{}
-		for i, n := range result[0] {
-			m[GithubURLRegexpNames[i]] = n
-		}
-		str := []string{"https://raw.githubusercontent.com", m["repoUser"], m["repoName"], "HEAD", filepath}
-		return true, strings.Join(str, "/"), nil
+	result := GithubURLRegexp.FindAllStringSubmatch(repoUrl, -1)
+	m := map[string]string{}
+	for i, n := range result[0] {
+		m[GithubURLRegexpNames[i]] = n
 	}
-
-	return false, "", nil
+	param := req.Param{}
+	if ref != "" {
+		param["ref"] = ref
+	}
+	var file GithubFile
+	r, _ := req.Get(fmt.Sprintf(GithubAPITemplate, m["repoUser"], m["repoName"], filepath), param)
+	err := r.ToJSON(&file)
+	if err != nil {
+		return true, "", err
+	}
+	return true, file.DownloadUrl, nil
 }
